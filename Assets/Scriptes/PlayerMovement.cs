@@ -8,12 +8,14 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] float jumpHeight;
     [SerializeField] float movementSpeed;
     [SerializeField] float maxSpeed;
-    [SerializeField] float groundDetectionDistance = .1f;
+    [SerializeField] float groundDetectionDistance;
+    [SerializeField] float wallDetectionDistance;
     [SerializeField] LayerMask groundLayerMask;
     [SerializeField] float slowDownFactor;
 
     float velocity;
     float direction;
+    int lastDirection;
     float jumpVelocity;
 
     Rigidbody2D rb;
@@ -29,6 +31,8 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        #region Movement
+
         direction = Input.GetAxisRaw("Horizontal");
 
         if (direction == 0 && Grounded())
@@ -42,12 +46,34 @@ public class PlayerMovement : MonoBehaviour
 
         velocity += direction * movementSpeed;
         velocity = Mathf.Clamp(velocity, -maxSpeed, maxSpeed);
+
+        #endregion
+
+        #region Movement fix
+
+        if(direction != 0)
+        {
+            lastDirection = direction > 0 ? 1 : -1;
+        }
+
+        //Debug.DrawRay(transform.position - Vector3.up * (boxCollider.size.y * transform.localScale.y / 2), Vector2.right * direction * (boxCollider.size.x * transform.localScale.x / 2 + wallDetectionDistance), Color.red);
+        if (Physics2D.Raycast(transform.position - Vector3.up * (boxCollider.size.y * transform.localScale.y / 2), Vector2.right * lastDirection, boxCollider.size.x * transform.localScale.x / 2 + wallDetectionDistance, groundLayerMask))
+        {
+            velocity = 0;
+        }
+
         rb.velocity = new Vector2(velocity, rb.velocity.y);
+
+        #endregion
+
+        #region Jump
 
         if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.UpArrow))
         {
             Jump();
         }
+
+        #endregion
     }
 
     bool Grounded()
